@@ -2,34 +2,59 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Task 1 - Parallel Coordinates + Scatter Plot</title>
+  <title>PC + Scatter (Coordinated) + Bonus Dropdowns</title>
   <script src="//d3js.org/d3.v3.min.js"></script>
 
   <style>
     body { font: 10px sans-serif; margin: 16px; }
 
-    /* Task 1 layout: side-by-side */
+    /* Bonus controls */
+    .controls { margin-bottom: 10px; }
+    .controls label { margin-right: 6px; }
+    .controls select { margin-right: 14px; }
+
+    /* Layout: side-by-side */
     .row { display: flex; gap: 16px; align-items: flex-start; }
     .panel { flex: 1; }
 
     svg { font: 10px sans-serif; border: 1px solid #ddd; }
 
-    /* PC styles */
-    .pc-line { fill: none; stroke: #666; shape-rendering: crispEdges; opacity: 0.35; }
+    /* Parallel Coordinates styles */
+    .pc-line { fill: none; stroke: #666; shape-rendering: crispEdges; opacity: 0.35; stroke-width: 1; }
     .axis line, .axis path { fill: none; stroke: #000; shape-rendering: crispEdges; }
     .axis text { text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff; cursor: move; }
 
-    /* Scatter styles */
+    /* Scatter plot styles */
     .sp-dot { fill: black; opacity: 0.75; }
     .xaxis text, .yaxis text { font: 10px sans-serif; }
     .xaxis path, .xaxis line, .yaxis path, .yaxis line {
       fill: none; stroke: #000; shape-rendering: crispEdges;
     }
+
+    /* Coordinated highlight (Task 2) */
+    .pc-line.highlighted {
+      stroke: red !important;
+      stroke-width: 3px !important;
+      opacity: 1 !important;
+    }
+    .sp-dot.highlighted {
+      fill: red !important;
+      opacity: 1 !important;
+    }
   </style>
 </head>
 
 <body>
-  <h3>Task 1: Parallel Coordinates (left) + Scatter Plot (right)</h3>
+  <h3>Parallel Coordinates + Scatter Plot (Coordinated Views)</h3>
+
+  <!-- Bonus dropdowns -->
+  <div class="controls">
+    <label for="xDim">X:</label>
+    <select id="xDim"></select>
+
+    <label for="yDim">Y:</label>
+    <select id="yDim"></select>
+  </div>
 
   <div class="row">
     <div class="panel">
@@ -44,7 +69,18 @@
   <script src="splot.js"></script>
 
   <script>
-    // Load the dataset ONCE and render both graphs (Task 1)
+    // -------- Task 2: shared highlight functions --------
+    window.highlightById = function(id) {
+      d3.selectAll('.pc-line[data-id="' + id + '"]').classed("highlighted", true);
+      d3.selectAll('.sp-dot[data-id="' + id + '"]').classed("highlighted", true).attr("r", 6);
+    };
+
+    window.unhighlightById = function(id) {
+      d3.selectAll('.pc-line[data-id="' + id + '"]').classed("highlighted", false);
+      d3.selectAll('.sp-dot[data-id="' + id + '"]').classed("highlighted", false).attr("r", 3);
+    };
+
+    // Load once, render both (and support dropdown updates)
     d3.csv("cars.csv", function(err, data) {
       if (err) {
         console.error(err);
@@ -52,11 +88,54 @@
         return;
       }
 
-      // Render both views
+      // stable id per row for coordination
+      data.forEach(function(d, i){ d.__id__ = i; });
+
+      // Find numeric columns for dropdowns
+      var cols = d3.keys(data[0]).filter(function(k){ return k !== "name" && k !== "__id__"; });
+
+      function isNumericColumn(col) {
+        var good = 0, total = Math.min(data.length, 50);
+        for (var i=0; i<total; i++) {
+          var v = +data[i][col];
+          if (!isNaN(v)) good++;
+        }
+        return good / total > 0.8;
+      }
+
+      var numericCols = cols.filter(isNumericColumn);
+
+      // Defaults (use year/power if present)
+      var defaultX = numericCols.indexOf("year") >= 0 ? "year" : numericCols[0];
+      var defaultY = numericCols.indexOf("power") >= 0 ? "power" : numericCols[1];
+
+      // Populate dropdowns
+      var xSel = d3.select("#xDim");
+      var ySel = d3.select("#yDim");
+
+      xSel.selectAll("option").data(numericCols).enter()
+        .append("option").attr("value", String).text(String);
+
+      ySel.selectAll("option").data(numericCols).enter()
+        .append("option").attr("value", String).text(String);
+
+      xSel.property("value", defaultX);
+      ySel.property("value", defaultY);
+
+      // Render views
       window.renderPC(data, "#pcSvg");
-      window.renderScatter(data, "#spSvg", "year", "power"); // choose any two dimensions
+      window.renderScatter(data, "#spSvg", defaultX, defaultY);
+
+      // Bonus: update scatter when dropdown changes
+      function updateScatter() {
+        var xKey = xSel.property("value");
+        var yKey = ySel.property("value");
+        window.updateScatterAxes(xKey, yKey); // implemented in splot.js
+      }
+
+      xSel.on("change", updateScatter);
+      ySel.on("change", updateScatter);
     });
   </script>
 </body>
 </html>
-
