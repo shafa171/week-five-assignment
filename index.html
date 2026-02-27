@@ -71,8 +71,15 @@
   <script>
     // -------- Task 2: shared highlight functions --------
     window.highlightById = function(id) {
-      d3.selectAll('.pc-line[data-id="' + id + '"]').classed("highlighted", true);
-      d3.selectAll('.sp-dot[data-id="' + id + '"]').classed("highlighted", true).attr("r", 6);
+      // PC polylines
+  d3.selectAll('.pc-line[data-id="' + id + '"]')
+    .classed("highlighted", true);
+
+  // Scatter dots (bring to front so it’s visible)
+  d3.selectAll('.sp-dot[data-id="' + id + '"]')
+    .classed("highlighted", true)
+    .attr("r", 7)
+    .each(function() { this.parentNode.appendChild(this); }); // <-- key fix
     };
 
     window.unhighlightById = function(id) {
@@ -139,3 +146,4 @@
   </script>
 </body>
 </html>
+
