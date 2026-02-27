@@ -1,4 +1,4 @@
-// pc.js (D3 v3) - Parallel Coordinates for Task 1
+// pc.js (D3 v3) - Parallel Coordinates (Coordinated)
 // Exposes: window.renderPC(data, svgSelector)
 
 window.renderPC = function(data, svgSelector) {
@@ -8,27 +8,24 @@ window.renderPC = function(data, svgSelector) {
       width  = outerW - margin.left - margin.right,
       height = outerH - margin.top - margin.bottom;
 
-  // Clear target svg
   d3.select(svgSelector).selectAll("*").remove();
 
-  // Root group
   var svg = d3.select(svgSelector)
     .attr("width", outerW)
     .attr("height", outerH)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  // Coerce numeric values where possible (keeps your original behavior)
+  // Coerce numeric values for all keys except name/__id__
   data.forEach(function(d) {
     for (var k in d) {
-      if (k !== "name") {
+      if (k !== "name" && k !== "__id__") {
         var v = +d[k];
         if (!isNaN(v)) d[k] = v;
       }
     }
   });
 
-  // Scales
   var x = d3.scale.ordinal().rangePoints([0, width], 1);
   var y = {};
 
@@ -39,11 +36,10 @@ window.renderPC = function(data, svgSelector) {
 
   var axis = d3.svg.axis().orient("left");
 
-  // Dimensions: all numeric columns except "name"
+  // Use numeric dimensions only
   var dimensions = d3.keys(data[0]).filter(function(dim) {
-    if (dim === "name") return false;
+    if (dim === "name" || dim === "__id__") return false;
 
-    // only keep dimensions that are numeric in the data
     var ok = data.some(function(p) { return !isNaN(+p[dim]); });
     if (!ok) return false;
 
@@ -56,7 +52,7 @@ window.renderPC = function(data, svgSelector) {
 
   x.domain(dimensions);
 
-  // Draw polylines (one per row)
+  // Draw one polyline per row + add data-id for coordination
   data.forEach(function(row) {
     var lineData = dimensions.map(function(dim) {
       return { x: x(dim), y: y[dim](+row[dim]) };
@@ -64,12 +60,13 @@ window.renderPC = function(data, svgSelector) {
 
     svg.append("path")
       .attr("class", "pc-line")
+      .attr("data-id", row.__id__)
       .attr("d", line(lineData))
       .on("mouseover", function() {
-        d3.select(this).style("stroke", "red").style("stroke-width", 3).style("opacity", 1);
+        if (window.highlightById) window.highlightById(row.__id__);
       })
       .on("mouseout", function() {
-        d3.select(this).style("stroke", "#666").style("stroke-width", 1).style("opacity", 0.35);
+        if (window.unhighlightById) window.unhighlightById(row.__id__);
       });
   });
 
