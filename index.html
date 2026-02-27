@@ -1,55 +1,62 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<style>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Task 1 - Parallel Coordinates + Scatter Plot</title>
+  <script src="//d3js.org/d3.v3.min.js"></script>
 
-svg {
-  font: 10px sans-serif;
-}
+  <style>
+    body { font: 10px sans-serif; margin: 16px; }
 
-.polyline path {
-  fill: none;
-  stroke: #666;
-  shape-rendering: crispEdges;
-}
+    /* Task 1 layout: side-by-side */
+    .row { display: flex; gap: 16px; align-items: flex-start; }
+    .panel { flex: 1; }
 
-.axis line,
-.axis path {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
+    svg { font: 10px sans-serif; border: 1px solid #ddd; }
 
-.axis text {
-  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
-  cursor: move;
-}
+    /* PC styles */
+    .pc-line { fill: none; stroke: #666; shape-rendering: crispEdges; opacity: 0.35; }
+    .axis line, .axis path { fill: none; stroke: #000; shape-rendering: crispEdges; }
+    .axis text { text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff; cursor: move; }
 
-.xaxis text {
-  font: 10px sans-serif;
-}
-.yaxis text {
-  font: 10px sans-serif;
-}
+    /* Scatter styles */
+    .sp-dot { fill: black; opacity: 0.75; }
+    .xaxis text, .yaxis text { font: 10px sans-serif; }
+    .xaxis path, .xaxis line, .yaxis path, .yaxis line {
+      fill: none; stroke: #000; shape-rendering: crispEdges;
+    }
+  </style>
+</head>
 
-.xaxis path,
-.xaxis line {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
-
-.yaxis path,
-.yaxis line {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
-
-
-</style>
 <body>
-<svg class="chart"></svg>
-<script src="//d3js.org/d3.v3.min.js"></script>
-<script src = "pc.js">   </script>
+  <h3>Task 1: Parallel Coordinates (left) + Scatter Plot (right)</h3>
+
+  <div class="row">
+    <div class="panel">
+      <svg id="pcSvg" width="520" height="450"></svg>
+    </div>
+    <div class="panel">
+      <svg id="spSvg" width="520" height="450"></svg>
+    </div>
+  </div>
+
+  <script src="pc.js"></script>
+  <script src="splot.js"></script>
+
+  <script>
+    // Load the dataset ONCE and render both graphs (Task 1)
+    d3.csv("cars.csv", function(err, data) {
+      if (err) {
+        console.error(err);
+        alert("cars.csv not loading (check file name/path on GitHub Pages).");
+        return;
+      }
+
+      // Render both views
+      window.renderPC(data, "#pcSvg");
+      window.renderScatter(data, "#spSvg", "year", "power"); // choose any two dimensions
+    });
+  </script>
 </body>
 </html>
+
